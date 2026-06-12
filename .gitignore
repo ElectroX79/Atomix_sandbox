@@ -1,0 +1,9 @@
+
+*.exe
+*.x
+*.o
+build/
+
+.vscode/
+vcpkg/
+.idea/
