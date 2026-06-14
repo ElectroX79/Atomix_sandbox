@@ -8,5 +8,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-O3 -march=native -Wall -Wextra)
 
+add_library(AtomixCore STATIC src/Buffer.cpp)
+target_include_directories(AtomixCore PUBLIC include)
 
 add_executable(atomix src/main.cpp)
+target_link_libraries(atomix PRIVATE AtomixCore)
+
+
+add_executable(unit_test external/catch2/catch_amalgamated.cpp)
+target_include_directories(unit_test PRIVATE include)
+target_link_libraries(unit_test PRIVATE AtomixCore)
