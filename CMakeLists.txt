@@ -21,5 +21,9 @@ external/catch2/catch_amalgamated.cpp
 test/test_buffer.cpp
 )
 
-target_include_directories(unit_test PRIVATE include)
+target_include_directories(unit_test PRIVATE 
+include
+external/catch2
+)
+
 target_link_libraries(unit_test PRIVATE AtomixCore)
