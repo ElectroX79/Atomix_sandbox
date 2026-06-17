@@ -27,3 +27,7 @@ external/catch2
 )
 
 target_link_libraries(unit_test PRIVATE AtomixCore)
+
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/installed/x64-linux")
+
+find_package(Arrow CONFIG REQUIRED)
