@@ -5,19 +5,23 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string.h>
+#include <string>
 
 #include "data_type.hpp"
 
 class TabularData{
 private:
 
+    //each column has specialized meta_data 
     struct meta_data{
+        std::string name; 
         size_t padding;
         size_t offset; //Represent start the column (in bytes) respect data_[0]
         size_t n_elements; 
         size_t element_size; //size of each element (in bytes)
         DataType data_type; //Enumeration of data types, more info see data_type.hpp
     };
+
     
     std::vector<uint8_t> data_;
     std::vector<meta_data> data_info_; //meta data, indicates n_columns (data_info_.size()), offset of the columns, and the types
@@ -73,6 +77,22 @@ public:
 
     }
     */
+
+
+    void append(TabularData &t_data){
+
+        auto it_aux = data_info_.end();
+        size_t size_aux = data_.size();
+
+        data_.insert(data_.end(), t_data.data_.begin(), t_data.data_.end());
+
+
+        data_info_.insert(data_info_.end(), t_data.data_info_.begin(), t_data.data_info_.end());
+
+        for(auto it = it_aux; it!=data_info_.end(); ++it){
+            it->offset += size_aux;
+        }
+    }
 
     size_t column_n_elements(size_t i_column){
         return  data_info_[i_column].n_elements;
