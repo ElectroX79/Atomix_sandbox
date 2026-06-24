@@ -15,9 +15,9 @@ private:
     //each column has specialized meta_data 
     struct meta_data{
         std::string name; 
-        size_t padding;
+        size_t padding; //Padding goes before the real data (in bytes)
         size_t offset; //Represent start the column (in bytes) respect data_[0]
-        size_t n_elements; 
+        size_t n_elements;  // NO in bytes, to deduce size in bytes depends in element size
         size_t element_size; //size of each element (in bytes)
         DataType data_type; //Enumeration of data types, more info see data_type.hpp
     };
@@ -90,6 +90,38 @@ public:
         for(auto it = it_aux; it!=data_info_.end(); ++it){
             it->offset += size_aux;
         }
+    }
+
+    // its not [a,b) its [a,b] in mathematical notation
+    void erase(const size_t begin, const size_t end){
+        if(begin>end){
+            throw std::invalid_argument("The begin cannot be bigger than the end");
+        }
+
+        /*
+        if(begin<0){
+            throw std::out_of_range("Invalid container acces, begin<0");
+        }
+        */
+        
+
+        if(end>=data_info_.size()){
+            throw std::out_of_range("Invalid container acces, end>=size");
+        }
+
+        auto it_begin = data_.begin() + (data_info_[begin].offset - data_info_[begin].padding);
+        auto it_end = data_.begin() + 1 + (data_info_[end].offset + (data_info_[end].element_size * data_info_[end].n_elements));
+
+        size_t diff = (it_end - it_begin) + 1;
+
+        for(int i = end + 1; i < data_info_.size(); i++){
+            data_info_[i].offset -= diff;
+        }
+
+        
+        data_.erase(it_begin, it_end);
+
+        data_info_.erase(data_info_.begin() + begin, data_info_.begin() + end + 1 );
     }
 
 
