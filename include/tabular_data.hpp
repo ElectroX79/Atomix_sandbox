@@ -24,6 +24,7 @@ private:
     
     std::vector<uint8_t> data_;
     std::vector<meta_data> data_info_; //meta data, indicates n_columns (data_info_.size()), offset of the columns, and the types
+    std::vector<std::string> data_string_; //an auxiliar buffer to storage strings, because his variable length nature. 
     //std::vector<size_t> logic_to_real_; //for optimization reason (avoiding padding), the logical order may differ to physical order, that vector translates the logical index to logical index
     //std::vector<size_t> real_to_logic_;
 
@@ -31,7 +32,12 @@ private:
 
 
     uint8_t* get_point_column(size_t i_column, size_t column_offset = 0){
-       return &data_[data_info_[i_column].offset + data_info_[i_column].element_size*column_offset];
+        auto opt = byte_size(data_info_[i_column].data_type);
+        if(!opt.has_value()){
+            throw std::invalid_argument("the selected interval is not suitable to erase, because the byte_size of the element is undefined");
+        }
+
+       return &data_[data_info_[i_column].offset + opt.value()*column_offset];
     }
 
 public:
