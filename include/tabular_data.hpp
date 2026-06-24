@@ -75,11 +75,9 @@ public:
 
         
 
-    }
-    */
-
-
-    void append(TabularData &t_data){
+ */
+    
+    void append(const TabularData &t_data){
 
         auto it_aux = data_info_.end();
         size_t size_aux = data_.size();
@@ -94,7 +92,9 @@ public:
         }
     }
 
-    size_t column_n_elements(size_t i_column){
+
+
+    size_t column_n_elements(size_t i_column)const{
         return  data_info_[i_column].n_elements;
     }
 
