@@ -18,7 +18,6 @@ private:
         size_t padding; //Padding goes before the real data (in bytes)
         size_t offset; //Represent start the column (in bytes) respect data_[0]
         size_t n_elements;  // NO in bytes, to deduce size in bytes depends in element size
-        size_t element_size; //size of each element (in bytes)
         DataType data_type; //Enumeration of data types, more info see data_type.hpp
     };
 
@@ -109,10 +108,17 @@ public:
             throw std::out_of_range("Invalid container acces, end>=size");
         }
 
-        auto it_begin = data_.begin() + (data_info_[begin].offset - data_info_[begin].padding);
-        auto it_end = data_.begin() + 1 + (data_info_[end].offset + (data_info_[end].element_size * data_info_[end].n_elements));
+    
+        auto opt = byte_size(data_info_[end].data_type);
+        if(!opt.has_value()){
+            throw std::invalid_argument("the selected interval is not suitable to erase, because the byte_size of the element is undefined");
+        }
 
-        size_t diff = (it_end - it_begin) + 1;
+
+        auto it_begin = data_.begin() + (data_info_[begin].offset - data_info_[begin].padding);
+        auto it_end = data_.begin() + (data_info_[end].offset + (opt.value() * data_info_[end].n_elements));
+
+        size_t diff = (it_end - it_begin);
 
         for(int i = end + 1; i < data_info_.size(); i++){
             data_info_[i].offset -= diff;
@@ -129,10 +135,6 @@ public:
     size_t column_n_elements(size_t i_column)const{
         return  data_info_[i_column].n_elements;
     }
-
-
-    
-
 
 
 

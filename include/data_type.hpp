@@ -2,15 +2,17 @@
 #define DATATYPE_HH
 
 #include <cstdint>
+#include <optional>
 
 enum class DataType : uint8_t{
     Int32,
     Float64,
     String,
-    Bool
+    Bool,
+    Undefined
 };
 
-constexpr int byte_size(DataType dtype){
+constexpr std::optional<size_t> byte_size(DataType dtype){
     switch (dtype)
     {
     case DataType::Int32:
@@ -19,14 +21,17 @@ constexpr int byte_size(DataType dtype){
     case DataType::Float64:
         return 8;
     
-    case DataType::String:
-        return -1;
-
     case DataType::Bool:
         return 1;
-    
+
+    case DataType::String:
+        return std::nullopt;
+
+    case DataType::Undefined:
+        return std::nullopt;
+
     default:
-        return 0;
+        return std::nullopt;
     }
 
 
