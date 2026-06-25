@@ -25,10 +25,10 @@ constexpr std::optional<size_t> byte_size(DataType dtype){
         return 1;
 
     case DataType::String:
-        return std::nullopt;
+        return 8;
 
     case DataType::Undefined:
-        return 8; //IMPORTANT: returns the size of the offset (uint64) not the string 
+        return std::nullopt ; //IMPORTANT: returns the size of the offset (uint64) not the string 
 
     default:
         return std::nullopt;
