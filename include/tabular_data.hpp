@@ -30,7 +30,13 @@ private:
 
 //primitive methods
 
-
+    /**
+     * @brief Returns the pointer of a raw element of a column
+     * * @param i_column The column to evaluate
+     * * @param column_offset The index of the column
+     * * @note This methods works with BYTES 
+     * * @warning Proceed carefully, wrong manipulation could cause serius misinterpretation with the data
+     */
     uint8_t* get_point_column(size_t i_column, size_t column_offset = 0){
         auto opt = byte_size(data_info_[i_column].data_type);
         if(!opt.has_value()){
@@ -41,47 +47,39 @@ private:
     }
 
 public:
-    /* method deprecated/frozen
+
+    /**
+     * @brief Extract a partial tabular data defined by a interval
+     * * @param begin The first index of the interval of columns to extract
+     * * @param end The last index of the interval of columns to extract
+     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     */
     TabularData extract(size_t begin, size_t end){
         if(begin>end){
             throw std::invalid_argument("The begin cannot be bigger than the end");
         }
 
+        //Always begin<0, because it's size_t type
         
-        if(begin<0){
-            throw std::out_of_range("Invalid container acces, begin<0");
-        }
         
-
         if(end>=data_info_.size()){
             throw std::out_of_range("Invalid container acces, end>=size");
         }
 
+
         TabularData aux;
-
-        aux.data_info_.assign(data_info_.begin() + begin, data_info_.begin() + end + 1);
-
-
-        size_t acc = 0;
-        for(int i=begin;i<=end;i++){
-            acc+=(data_info_[i].n_elements*data_info_[i].element_size) + data_info_[i].padding ;
-        }
-        aux.data_.reserve(acc);
-
-        size_t aux_offset = 0;
-        for(int i=begin;i<=end;i++){
-            size_t aux_acc = (data_info_[i].n_elements*data_info_[i].element_size) + data_info_[i].padding;
-            aux.data_.resize(aux_offset)
-            memcpy(aux.data_.data(), data_.data() + data_info_[i].offset, data_info_[i].offset + aux_acc);
-            aux_offset += aux_acc;
-        }
-
         
 
         
+    }
+        
 
- */
-    
+    /**
+    * @brief Appends the content of another TabularData instance to the current one.
+    * * Merges the data buffers of 't_data' into the current instance. 
+    * * @param t_data The source TabularData object to be copied and concatenated.
+    * * @note Always at the end of the tabular data
+    */
     void append(const TabularData &t_data){
 
         auto it_aux = data_info_.end();
@@ -97,19 +95,19 @@ public:
         }
     }
 
-    // its not [a,b) its [a,b] in mathematical notation
+    /**
+     * @brief Erase an interval of columns of the current tabular data 
+     * * @param begin The first index of the interval of columns to erase
+     * * @param end The last index of the interval of columns to erase
+     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     */
     void erase(const size_t begin, const size_t end){
         if(begin>end){
             throw std::invalid_argument("The begin cannot be bigger than the end");
         }
 
-        /*
-        if(begin<0){
-            throw std::out_of_range("Invalid container acces, begin<0");
-        }
-        */
+        //Always begin<0, because it's size_t type
         
-
         if(end>=data_info_.size()){
             throw std::out_of_range("Invalid container acces, end>=size");
         }
@@ -137,7 +135,10 @@ public:
     }
 
 
-
+    /**
+     * @brief Returns the numbers of elements contained in a column
+     * * @param i_column The column to evaluate
+     */
     size_t column_n_elements(size_t i_column)const{
         return  data_info_[i_column].n_elements;
     }
