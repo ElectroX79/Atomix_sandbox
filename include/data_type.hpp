@@ -12,28 +12,6 @@ enum class DataType : int{
 };
 
 
-constexpr std::optional<size_t> byte_size(DataType dtype){
-    switch (dtype)
-    {
-    case DataType::Int32:
-        return 4;
-
-    case DataType::Float64:
-        return 8;
-    
-    case DataType::Bool:
-        return 1;
-
-    case DataType::String:
-        return 8;
-
-    case DataType::Undefined:
-        return std::nullopt ; //IMPORTANT: returns the size of the offset (uint64) not the string 
-
-    default:
-        return std::nullopt;
-
-
 namespace DataTypeUtils {
     inline std::string data_type_to_string(const DataType& dt) {
 

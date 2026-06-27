@@ -3,29 +3,37 @@
 
 #include <vector>
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
 #include "data_type.hpp"
+#include "security_check.hpp"
 
-template <typename T>
 
 class TabularData{
-private:
 
-    //each column has specialized meta_data 
+public: 
     struct meta_data{
         std::string name; 
         size_t padding; //Padding goes before the real data (in bytes)
         size_t offset; //Represent start the column (in bytes) respect data_[0]
-        size_t n_elements;  // NO in bytes, to deduce size in bytes depends in element size
+        size_t n_elements;  // NO in bytes, to deduce size in bytes depends on element size
         DataType data_type; //Enumeration of data types, more info see data_type.hpp
+
+        bool operator==(const meta_data& other) const {
+            return (name == other.name) && (padding == other.padding) && (offset == other.offset) && (n_elements == other.n_elements) && (data_type == other.data_type);
+        }
     };
 
+
+private:
+    //each column has specialized meta_data 
+   
     
     std::vector<uint8_t> data_;
-    std::vector<meta_data> data_info_; //meta data, indicates n_columns (data_info_.size()), offset of the columns, and the types
-    std::vector<std::string> data_string_; //an auxiliar buffer to storage strings, because his variable length nature. 
+    std::vector<meta_data> data_info_; //metadata, indicates n_columns (data_info_.size()), offset of the columns, and the types
+    std::vector<std::string> data_string_; //an auxiliar buffer to storage strings, because of his variable length nature.
     //std::vector<size_t> logic_to_real_; //for optimization reason (avoiding padding), the logical order may differ to physical order, that vector translates the logical index to logical index
     //std::vector<size_t> real_to_logic_;
 
@@ -38,8 +46,10 @@ private:
      * @brief Returns the pointer of a raw element of a column
      * * @param i_column The column to evaluate
      * * @param column_offset The index of the column
-     * * @note This methods works with BYTES 
+     * * @note This methods works with BYTES
      * * @warning Proceed carefully, wrong manipulation could cause serious misinterpretation with the data
+     * * @warning Proceed carefully, wrong manipulation could cause serius misinterpretation with the data
+
      */
     uint8_t* get_point_column(size_t i_column, size_t column_offset = 0){
         auto opt = DataTypeUtils::byte_size(data_info_[i_column].data_type);
@@ -86,6 +96,25 @@ public:
         auto opt =  DataTypeUtils::byte_size(data_info_[i].data_type);
         if(!opt.has_value()){
             throw std::invalid_argument("Cannot calculate last offset for column with undefined byte size");
+
+
+    /**
+     * @brief Extract a partial tabular data defined by a interval
+     * * @param begin The first index of the interval of columns to extract
+     * * @param end The last index of the interval of columns to extract
+     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     */
+    TabularData extract(size_t begin, size_t end){
+        if(begin>end){
+            throw std::invalid_argument("The begin cannot be bigger than the end");
+        }
+
+        //Always begin<0, because it's size_t type
+        
+        
+        if(end>=data_info_.size()){
+            throw std::out_of_range("Invalid container acces, end>=size");
+
         }
         return data_info_[i].offset + data_info_[i].n_elements * opt.value();   
     }
@@ -94,14 +123,16 @@ public:
 
 
 
+
 public:
 
     explicit TabularData(){}
-    explicit TabularData(size_t size):{
-        data_.reserve(size);
+    explicit TabularData(size_t data_size){
+        data_.reserve(data_size);
     }
 
     #ifndef NDEBUG
+
 
     TabularData(const std::vector<uint8_t>& data, const std::vector<meta_data>& data_info, const std::vector<std::string>& data_string):
     data_(data), data_info_(data_info),data_string_(data_string){}
@@ -116,6 +147,9 @@ public:
             std::cout << "Offset: " << data_info_[i].offset << "\n";
             std::cout << "N_elements: " << data_info_[i].n_elements << "\n";
             std::cout << "Data_type: " <<  DataTypeUtils::data_type_to_string(data_info_[i].data_type) << "\n";
+
+            std::cout << "Data_type: " << data_type_to_string(data_info_[i].data_type) << "\n";
+
             std::cout << "String_data: " << data_string_[data_info_[i].offset] << "\n";
         }
         std::cout <<"\n";
@@ -131,20 +165,24 @@ public:
         std::cout <<"\n";
     }
 
+    TabularData(std::vector<uint8_t> data, std::vector<meta_data> data_info, std::vector<std::string> data_string):
+    data_(data), data_info_(data_info),data_string_(data_string){}
+
+
 
 
     #endif 
 
     /**
-     * @brief Extract a copy of partial tabular data defined by a interval
+     * @brief Extract a copy of partial tabular data defined by an interval
      * * @param begin The first index of the interval of columns to extract
      * * @param end The last index of the interval of columns to extract
-     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     * * @note Unlike c++ standard, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
      */
-    TabularData extract(size_t begin, size_t end){
-
     TabularData extract(const size_t begin, const size_t end){
+
         BoundCheck::check_index(begin, end, data_info_.size());
+
         TabularData aux;
 
         aux.data_info_.assign(data_info_.begin() + begin, data_info_.begin() + end + 1);
@@ -192,10 +230,12 @@ public:
         }
 
     
-    
+        return aux;
 
     }
+        
 
+        
 
         
 
@@ -205,6 +245,7 @@ public:
     * * Merges the data buffers of 't_data' into the current instance. 
     * * @param t_data The source TabularData object to be copied and concatenated.
     * * @note Always appends at the end of the tabular data
+    * * @note Always at the end of the tabular data
     */
     void append(const TabularData &t_data){
 
@@ -213,9 +254,9 @@ public:
             throw std::runtime_error("byte_size do not admit DataType::String");
         }
 
-        auto it_aux = data_info_.end();
-        size_t size_aux = data_.size();
-        size_t str_offset = data_string_.size();
+        const auto it_aux = data_info_.end();
+        const size_t size_aux = data_.size();
+        const size_t str_offset = data_string_.size();
 
         data_.insert(data_.end(), t_data.data_.begin(), t_data.data_.end());
 
@@ -239,20 +280,19 @@ public:
         
     }
 
-
-    // its not [a,b) its [a,b] in mathematical notation
+    /**
+     * @brief Erase an interval of columns of the current tabular data 
+     * * @param begin The first index of the interval of columns to erase
+     * * @param end The last index of the interval of columns to erase
+     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     */
     void erase(const size_t begin, const size_t end){
         if(begin>end){
             throw std::invalid_argument("The begin cannot be bigger than the end");
         }
 
-        /*
-        if(begin<0){
-            throw std::out_of_range("Invalid container acces, begin<0");
-        }
-        */
+        //Always begin<0, because it's size_t type
         
-
         if(end>=data_info_.size()){
             throw std::out_of_range("Invalid container acces, end>=size");
         }
@@ -269,6 +309,7 @@ public:
         BoundCheck::check_index(begin, end, data_info_.size());
     
 
+
         auto opt = byte_size(data_info_[end].data_type);
 
         const auto opt = DataTypeUtils::byte_size(data_info_[end].data_type);
@@ -277,9 +318,11 @@ public:
             throw std::invalid_argument("The selected interval is not suitable to erase, because the byte_size of the final element is undefined, causing imposibility to calculate the size of the interval in bytes");
         }
 
+
         auto opt2 = byte_size(DataType::String);
 
         const auto opt2 = DataTypeUtils::byte_size(DataType::String);
+
         if(!opt2.has_value()) {
             throw std::runtime_error("byte_size do not admit DataType::String");
         }
@@ -321,8 +364,8 @@ public:
             if(data_info_[i].data_type == DataType::String){
                 string_stride += data_info_[i].n_elements;
 
-                auto start = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset]);
-                auto end = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset + (data_info_[i].n_elements * opt2.value())]);
+                const auto start = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset]);
+                const auto end = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset + (data_info_[i].n_elements * opt2.value())]);
                 data_string_.erase(data_string_.begin() + *start, data_string_.begin() + *end);
             }
         
@@ -344,9 +387,26 @@ public:
     }
 
 
+    /**
+     * @brief Returns the numbers of elements contained in a column
+     * * @param i_column The column to evaluate
+     */
 
-    size_t column_n_elements(size_t i_column)const{
+    inline size_t column_n_elements(size_t i_column)const{
         return  data_info_[i_column].n_elements;
+    }
+
+
+     /**
+     * @brief Returns whether the tabular data is empty
+     */
+    inline bool empty()const{
+        return data_.empty();
+    }
+
+
+    bool operator==(const TabularData& td)const{
+        return (td.data_ == data_) && (td.data_info_ == data_info_) && (td.data_string_ == data_string_);
     }
 
 
