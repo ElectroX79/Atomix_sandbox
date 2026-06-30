@@ -40,87 +40,33 @@ private:
 //primitive methods
 
 
-
-
     /**
      * @brief Returns the pointer of a raw element of a column
      * * @param i_column The column to evaluate
      * * @param column_offset The index of the column
-     * * @note This methods works with BYTES
+     * * @note This method works with BYTES
      * * @warning Proceed carefully, wrong manipulation could cause serious misinterpretation with the data
      * * @warning Proceed carefully, wrong manipulation could cause serius misinterpretation with the data
 
      */
-    uint8_t* get_point_column(size_t i_column, size_t column_offset = 0){
-        auto opt = DataTypeUtils::byte_size(data_info_[i_column].data_type);
-        if(!opt.has_value()){
-            throw std::invalid_argument("the selected interval is not suitable to erase, because the byte_size of the element is undefined");
-        }
-
-       return &data_[data_info_[i_column].offset + opt.value()*column_offset];
-    }
+    uint8_t* get_point_column(size_t i_column, size_t column_offset = 0);
 
 
 
-public:
      /**
      * @brief Updates the offset of each element of a column of type DataType::String
      * * @param i The index of the column to update
      * * @param stride The value to add to the offset of each string in the column
      * * @note This method is only compatible with columns of type DataType::String.
      */
-    void update_string_offset(size_t i, const int stride){
-        BoundCheck::check_index(i, i, data_info_.size());
-        if (data_info_[i].data_type != DataType::String){
-            throw std::invalid_argument("the operation is only compatible with DataType::String ");
-        }
-        auto opt =  DataTypeUtils::byte_size(DataType::String);
-        if(!opt.has_value()) {
-            throw std::runtime_error("byte_size do not admit DataType::String, process shut off");
-        }
-        for (size_t n = data_info_[i].offset; n < data_info_[i].offset + (data_info_[i].n_elements * opt.value()); n += opt.value()) {
-            uint64_t* cast_pointer = reinterpret_cast<uint64_t*>(&data_[n]);
-            (*cast_pointer) += stride;
-            
-        }
-
-    }
+    void update_string_offset(size_t i, const int stride);
 
     /** @brief Returns the offset of the last element in a column
      * @param i The index of the column
      * @return The offset of the last element in the column
      * @note This method is only compatible with columns with defined byte sizes. 
      */
-    size_t last_offset(size_t i)const{
-       BoundCheck::check_index(i, i, data_info_.size());
-        auto opt =  DataTypeUtils::byte_size(data_info_[i].data_type);
-        if(!opt.has_value()){
-            throw std::invalid_argument("Cannot calculate last offset for column with undefined byte size");
-
-
-    /**
-     * @brief Extract a partial tabular data defined by a interval
-     * * @param begin The first index of the interval of columns to extract
-     * * @param end The last index of the interval of columns to extract
-     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
-     */
-    TabularData extract(size_t begin, size_t end){
-        if(begin>end){
-            throw std::invalid_argument("The begin cannot be bigger than the end");
-        }
-
-        //Always begin<0, because it's size_t type
-        
-        
-        if(end>=data_info_.size()){
-            throw std::out_of_range("Invalid container acces, end>=size");
-
-        }
-        return data_info_[i].offset + data_info_[i].n_elements * opt.value();   
-    }
-
-
-
+    size_t last_offset(size_t i)const;
 
 
 
@@ -131,47 +77,6 @@ public:
         data_.reserve(data_size);
     }
 
-    #ifndef NDEBUG
-
-
-    TabularData(const std::vector<uint8_t>& data, const std::vector<meta_data>& data_info, const std::vector<std::string>& data_string):
-    data_(data), data_info_(data_info),data_string_(data_string){}
-
-    void print()const{
-
-        std::cout << "Data: \n";
-        for (int i = 0; i < data_info_.size(); i++) {
-            std::cout << "Column " << i << ":\n";
-            std::cout << "Name: " << data_info_[i].name << "\n";
-            std::cout << "Padding: " << data_info_[i].padding << "\n";
-            std::cout << "Offset: " << data_info_[i].offset << "\n";
-            std::cout << "N_elements: " << data_info_[i].n_elements << "\n";
-            std::cout << "Data_type: " <<  DataTypeUtils::data_type_to_string(data_info_[i].data_type) << "\n";
-
-            std::cout << "Data_type: " << data_type_to_string(data_info_[i].data_type) << "\n";
-
-            std::cout << "String_data: " << data_string_[data_info_[i].offset] << "\n";
-        }
-        std::cout <<"\n";
-        std::cout << "Data: \n";
-        for (int i = 0; i < data_.size(); i++) {
-            std::cout << data_[i] << " ";
-        }
-        std::cout <<"\n";
-        std::cout <<"\n" << "Data_string: \n";
-        for (int j = 0; j < data_string_.size(); j++) {
-            std::cout << data_string_[j] << " ";
-        }
-        std::cout <<"\n";
-    }
-
-    TabularData(std::vector<uint8_t> data, std::vector<meta_data> data_info, std::vector<std::string> data_string):
-    data_(data), data_info_(data_info),data_string_(data_string){}
-
-
-
-
-    #endif 
 
     /**
      * @brief Extract a copy of partial tabular data defined by an interval
@@ -179,65 +84,7 @@ public:
      * * @param end The last index of the interval of columns to extract
      * * @note Unlike c++ standard, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
      */
-    TabularData extract(const size_t begin, const size_t end){
-
-        BoundCheck::check_index(begin, end, data_info_.size());
-
-        TabularData aux;
-
-        aux.data_info_.assign(data_info_.begin() + begin, data_info_.begin() + end + 1);
-        aux.data_.insert(aux.data_.end(), data_.begin() + data_info_[begin].offset, data_.begin() + last_offset(end));
-        aux.data_info_.insert(aux.data_info_.end(), data_info_.begin() + begin, data_info_.begin() + end + 1);
-
-        size_t stride = 0;
-        size_t string_stride = 0;
-        size_t string_data_begin = 0;
-        size_t string_data_end = 0;
-        bool string_data_begin_set = false;
-    
-        
-        auto opt =  DataTypeUtils::byte_size(data_info_[begin - 1].data_type);
-        if(!opt.has_value()){
-            throw std::invalid_argument("the selected interval is not suitable to erase, because the byte_size of the final element is undefined, causing imposibility to calculate the size of the interval in bytes");
-        }
-        stride = last_offset(begin - 1);
-
-        auto opt2 = DataTypeUtils::byte_size(DataType::String);
-        if(!opt2.has_value()) {
-            throw std::runtime_error("byte_size do not admit DataType::String, causing impossibility to calculate the size of the interval in bytes");
-        }
-        for(size_t i = 0; i < begin; ++i){
-            if(data_info_[i].data_type == DataType::String){
-                string_stride += data_info_[i].n_elements;
-            }
-        }
-
-        for(size_t i = begin; i <= end; ++i){
-            if(data_info_[i].data_type == DataType::String){
-                update_string_offset(i, -string_stride * opt2.value());
-                if(!string_data_begin_set){
-                    string_data_begin = (*reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset]));
-                    string_data_begin_set = true;
-                }
-                string_data_end = (*reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset + (data_info_[i].n_elements * opt2.value())]));
-
-            }
-            aux.data_info_[i].offset -= stride;
-        }
-
-        if(string_data_begin_set){
-            aux.data_string_.insert(aux.data_string_.end(), data_string_.begin() + string_data_begin, data_string_.begin() + string_data_end);
-        }
-
-    
-        return aux;
-
-    }
-        
-
-        
-
-        
+    TabularData extract(const size_t begin, const size_t end);
 
 
     /**
@@ -247,55 +94,7 @@ public:
     * * @note Always appends at the end of the tabular data
     * * @note Always at the end of the tabular data
     */
-    void append(const TabularData &t_data){
-
-        auto opt = DataTypeUtils::byte_size(DataType::String);
-        if(!opt.has_value()) {
-            throw std::runtime_error("byte_size do not admit DataType::String");
-        }
-
-        const auto it_aux = data_info_.end();
-        const size_t size_aux = data_.size();
-        const size_t str_offset = data_string_.size();
-
-        data_.insert(data_.end(), t_data.data_.begin(), t_data.data_.end());
-
-        data_info_.insert(data_info_.end(), t_data.data_info_.begin(), t_data.data_info_.end());
-
-
-
-
-
-
-        data_string_.insert(data_string_.end(), t_data.data_string_.begin(), t_data.data_string_.end());
-
-        for(auto it = it_aux; it!=data_info_.end(); ++it){
-            
-            if(it->data_type == DataType::String){
-               update_string_offset(std::distance(data_info_.begin(), it), str_offset);
-            }
-            else it->offset += size_aux;
-        }
-
-        
-    }
-
-    /**
-     * @brief Erase an interval of columns of the current tabular data 
-     * * @param begin The first index of the interval of columns to erase
-     * * @param end The last index of the interval of columns to erase
-     * * @note Unlike c++ standar, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
-     */
-    void erase(const size_t begin, const size_t end){
-        if(begin>end){
-            throw std::invalid_argument("The begin cannot be bigger than the end");
-        }
-
-        //Always begin<0, because it's size_t type
-        
-        if(end>=data_info_.size()){
-            throw std::out_of_range("Invalid container acces, end>=size");
-        }
+    void append(const TabularData &t_data);
 
     /**
      * @brief Erase an interval of columns of the current tabular data 
@@ -303,95 +102,13 @@ public:
      * * @param end The last index of the interval of columns to erase
      * * @note Unlike c++ standar, the end is not exclusive, in other words consider [begin, end], not [begin, end)
      */
-    void erase(const size_t begin, const size_t end){
-
-
-        BoundCheck::check_index(begin, end, data_info_.size());
-    
-
-
-        auto opt = byte_size(data_info_[end].data_type);
-
-        const auto opt = DataTypeUtils::byte_size(data_info_[end].data_type);
-
-        if(!opt.has_value()){
-            throw std::invalid_argument("The selected interval is not suitable to erase, because the byte_size of the final element is undefined, causing imposibility to calculate the size of the interval in bytes");
-        }
-
-
-        auto opt2 = byte_size(DataType::String);
-
-        const auto opt2 = DataTypeUtils::byte_size(DataType::String);
-
-        if(!opt2.has_value()) {
-            throw std::runtime_error("byte_size do not admit DataType::String");
-        }
-
-
-
-        int acc_stride = 0;
-        for(size_t i = begin; i <= end; ++i){
-            
-            if(data_info_[i].data_type == DataType::String){
-                acc_stride += data_info_[i].n_elements;
-    
-                auto start = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset]);
-                auto end = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset + (data_info_[i].n_elements * opt2.value())]);
-                data_string_.erase(data_string_.begin() + *start, data_string_.begin() + *end);
-            }
-        
-        }
-        acc_stride *= opt2.value();
-       
-
-        for(size_t i = end + 1; i < data_info_.size(); ++i){
-            
-            if(data_info_[i].data_type == DataType::String){
-                for(int j = data_info_[i].offset; j < data_info_[i].offset + (data_info_[i].n_elements * opt2.value()); j+=opt2.value()){
-                    uint64_t* cast_pointer = reinterpret_cast<uint64_t*>(&data_[j]);
-                    (*cast_pointer) -= acc_stride;
-                }
-            }
-            data_info_[i].offset -= (data_info_[end].n_elements * opt2.value() + data_info_[end].offset) - data_info_[begin].offset;
-        }
-
-        data_.erase(data_.begin() + data_info_[begin].offset, data_.begin() + data_info_[end].offset + (data_info_[end].n_elements * opt.value()));
-        data_info_.erase(data_info_.begin() + begin, data_info_.begin() + end + 1);
-
-        int string_stride = 0;
-        for(size_t i = begin; i <= end; ++i){
-            
-            if(data_info_[i].data_type == DataType::String){
-                string_stride += data_info_[i].n_elements;
-
-                const auto start = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset]);
-                const auto end = reinterpret_cast<uint64_t*>(&data_[data_info_[i].offset + (data_info_[i].n_elements * opt2.value())]);
-                data_string_.erase(data_string_.begin() + *start, data_string_.begin() + *end);
-            }
-        
-        }
-        string_stride *= opt2.value();
-    
-
-        for(size_t i = end + 1; i < data_info_.size(); ++i){
-            
-            if(data_info_[i].data_type == DataType::String){
-                update_string_offset(i, -string_stride);
-            }
-            data_info_[i].offset -= (data_info_[end].n_elements * opt2.value() + data_info_[end].offset) - data_info_[begin].offset;
-        }
-
-        data_.erase(data_.begin() + data_info_[begin].offset, data_.begin() + data_info_[end].offset + (data_info_[end].n_elements * opt.value()));
-        data_info_.erase(data_info_.begin() + begin, data_info_.begin() + end + 1);
-
-    }
+    void erase(const size_t begin, const size_t end);
 
 
     /**
      * @brief Returns the numbers of elements contained in a column
      * * @param i_column The column to evaluate
      */
-
     inline size_t column_n_elements(size_t i_column)const{
         return  data_info_[i_column].n_elements;
     }
@@ -408,7 +125,6 @@ public:
     bool operator==(const TabularData& td)const{
         return (td.data_ == data_) && (td.data_info_ == data_info_) && (td.data_string_ == data_string_);
     }
-
 
 
 
