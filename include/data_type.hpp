@@ -1,10 +1,9 @@
 #ifndef DATATYPE_HH
 #define DATATYPE_HH
 
-#include <cstdint>
 #include <optional>
 
-enum class DataType : uint8_t{
+enum class DataType : int{
     Int32,
     Float64,
     String,
@@ -12,29 +11,54 @@ enum class DataType : uint8_t{
     Undefined
 };
 
-constexpr std::optional<size_t> byte_size(DataType dtype){
-    switch (dtype)
-    {
-    case DataType::Int32:
-        return 4;
 
-    case DataType::Float64:
-        return 8;
-    
-    case DataType::Bool:
-        return 1;
+namespace DataTypeUtils {
+    inline std::string data_type_to_string(const DataType& dt) {
 
-    case DataType::String:
-        return 8;
+        switch (dt)
+        {
+            case DataType::Int32:
+                return "Int32";
 
-    case DataType::Undefined:
-        return std::nullopt ; //IMPORTANT: returns the size of the offset (uint64) not the string 
+            case DataType::Float64:
+                return "Float64";
 
-    default:
-        return std::nullopt;
+            case DataType::Bool:
+                return "Bool";
+
+            case DataType::String:
+                return "String";
+
+            case DataType::Undefined:
+                return "Undefined"; ; //IMPORTANT: returns the size of the offset (uint64) not the string
+
+            default:
+                return "Unknown";
+        }
+
     }
 
+    constexpr std::optional<size_t> byte_size(DataType dtype){
+        switch (dtype)
+        {
+            case DataType::Int32:
+                return 4;
 
+            case DataType::Float64:
+                return 8;
+
+            case DataType::Bool:
+                return 1;
+
+            case DataType::String:
+                return 8; //IMPORTANT: returns the size of the offset (uint64) not the string
+
+            case DataType::Undefined:
+                return std::nullopt;
+        }
+
+
+    }
 }
 
 
