@@ -31,10 +31,8 @@ namespace DataTypeUtils {
 
             case DataType::Undefined:
                 return "Undefined"; ; //IMPORTANT: returns the size of the offset (uint64) not the string
-
-            default:
-                return "Unknown";
         }
+        throw std::invalid_argument("Invalid data type");
 
     }
 
@@ -56,7 +54,7 @@ namespace DataTypeUtils {
             case DataType::Undefined:
                 return std::nullopt;
         }
-
+        throw std::invalid_argument("Invalid data type");
 
     }
 }
