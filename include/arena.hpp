@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <stdexcept>
+#include <cstring>
 
 class Arena{
     private:
@@ -19,8 +20,22 @@ class Arena{
     Arena(const Arena&) = delete;
     Arena& operator=(const Arena&) = delete;
 
-    Arena(Arena&&) = default;
-    Arena& operator=(Arena&&) = default;
+    Arena(Arena&& other)noexcept: mem_(other.mem_), mem_size_(other.mem_size_), offset_(other.offset_){
+        other.mem_ = nullptr;
+        other.offset_ = 0;
+    }
+
+    Arena& operator=(Arena&& other)noexcept{
+        if (this != &other) {
+            mem_ = other.mem_;
+            mem_size_ = other.mem_size_;
+            offset_ = other.offset_;
+            other.mem_ = nullptr;
+            other.offset_ = 0;
+        }
+        return *this;
+
+    }
 
 
 
@@ -36,7 +51,7 @@ class Arena{
         }
     }
 
-    ~Arena() {
+    ~Arena(){
         free(mem_);
     }
 
@@ -56,6 +71,17 @@ class Arena{
 
         offset_ += padding + size;
         return reinterpret_cast<void*>(mem_ptr + offset_ - size);
+    }
+
+    void expand(const size_t new_size, const size_t alignment = 64){
+        if (new_size < offset_) {
+            throw std::invalid_argument("New size must be greater than the current occupied memory");
+        }
+
+        auto aux = Arena(new_size, alignment);
+
+        memcpy(aux.mem_, mem_, offset_);
+        *this = std::move(aux);
     }
 
 
