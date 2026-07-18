@@ -50,6 +50,22 @@ public:
         return *this;
     }
 
+    [[nodiscard]] auto n_columns() const {
+        return columns_.size();
+    }
+
+    // no name member found anywhere, leaving this. Could add a name member in the Column struct, your call
+    // auto column_name(auto size_index) {
+    //
+    // }
+
+    [[nodiscard]] auto column_datatype(const size_t size_index) const {
+        return columns_[size_index].type;
+    }
+
+    [[nodiscard]] auto column_size(const size_t size_index) const {
+        return columns_[size_index].n_elements;
+    }
 
     /**
      * @brief Extract a copy of partial tabular data defined by an interval
@@ -57,8 +73,9 @@ public:
      * * @param end The last index of the interval of columns to extract
      * * @note Unlike c++ standard, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
      */
-    [[nodiscard]]TabularData extract(const size_t begin, const size_t end);
-
+    [[nodiscard]]TabularData extract(size_t begin, size_t end);
+    //I removed the const keyword from these arguments because they only have an effect when we are defining the functions.
+    //this is simply a declaration - const is redundant
 
     /**
     * @brief Appends the content of another TabularData instance to the current one.
@@ -75,7 +92,7 @@ public:
      * * @param end The last index of the interval of columns to erase
      * * @note Unlike c++ standar, the end is not exclusive, in other words consider [begin, end], not [begin, end)
      */
-    void erase(const size_t begin, const size_t end);
+    void erase(size_t begin, size_t end);
 
 
 
