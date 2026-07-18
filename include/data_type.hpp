@@ -30,7 +30,7 @@ namespace DataTypeUtils {
                 return "String";
 
             case DataType::Undefined:
-                return "Undefined"; ; //IMPORTANT: returns the size of the offset (uint64) not the string
+                return "Undefined";
         }
         throw std::invalid_argument("Invalid data type");
 
@@ -49,7 +49,7 @@ namespace DataTypeUtils {
                 return 1;
 
             case DataType::String:
-                return 8; //IMPORTANT: returns the size of the offset (uint64) not the string
+                return 4; //IMPORTANT: returns the size of the offset (uint32), not the string
 
             case DataType::Undefined:
                 return std::nullopt;
