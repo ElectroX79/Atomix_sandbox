@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <stdexcept>
+#include <string_view>
 
 
 #include "data_type.hpp"
 #include "buffer.hpp"
+#include "security_check.hpp"
 
 
 class TabularData{
@@ -29,6 +31,9 @@ class TabularData{
     std::vector<Column> columns_;
 
 
+    std::vector<std::string> columns_name_; // to avoid a non-static size of the struct Column separate the strings (the names of each column)
+
+
 public:
 
     TabularData() = default;
@@ -38,7 +43,8 @@ public:
     explicit TabularData(TabularData&& other)noexcept:
     data_(std::move (other.data_)),
     string_data_(std::move(other.string_data_)),
-    columns_(std::move(other.columns_))
+    columns_(std::move(other.columns_)),
+    columns_name_(std::move(other.columns_name_))
     {}
 
     TabularData& operator=(TabularData&& other)noexcept {
@@ -46,18 +52,22 @@ public:
             data_ = std::move(other.data_);
             string_data_ = std::move(other.string_data_);
             columns_ = std::move(other.columns_);
+            columns_name_ = std::move(other.columns_name_);
         }
         return *this;
     }
+
+
 
     [[nodiscard]] auto n_columns() const {
         return columns_.size();
     }
 
-    // no name member found anywhere, leaving this. Could add a name member in the Column struct, your call
-    // auto column_name(auto size_index) {
-    //
-    // }
+
+    [[nodiscard]] std::string_view column_name(const size_t size_index) {
+        BoundCheck::check_index(size_index, columns_name_.size(), columns_name_.size());
+        return columns_name_[size_index];
+    }
 
     [[nodiscard]] auto column_datatype(const size_t size_index) const {
         return columns_[size_index].type;
