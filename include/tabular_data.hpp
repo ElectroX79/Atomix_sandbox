@@ -59,11 +59,11 @@ public:
     //
     // }
 
-    auto column_datatype(auto size_index) {
+    [[nodiscard]] auto column_datatype(const size_t size_index) const {
         return columns_[size_index].type;
     }
 
-    auto column_size(auto size_index) {
+    [[nodiscard]] auto column_size(const size_t size_index) const {
         return columns_[size_index].n_elements;
     }
 
