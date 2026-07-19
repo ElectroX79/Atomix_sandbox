@@ -81,7 +81,7 @@ public:
      * @brief Extract a copy of partial tabular data defined by an interval
      * * @param begin The first index of the interval of columns to extract
      * * @param end The last index of the interval of columns to extract
-     * * @note Unlike c++ standard, the end is not exclusive, in other words we consider [begin, end], not [begin, end)
+     * * @note Consider  [begin, end)
      */
     [[nodiscard]]TabularData extract(size_t begin, size_t end);
     //I removed the const keyword from these arguments because they only have an effect when we are defining the functions.
@@ -100,7 +100,7 @@ public:
      * @brief Erase an interval of columns of the current tabular data 
      * * @param begin The first index of the interval of columns to erase
      * * @param end The last index of the interval of columns to erase
-     * * @note Unlike c++ standar, the end is not exclusive, in other words consider [begin, end], not [begin, end)
+     * * @note Consider [begin, end)
      */
     void erase(size_t begin, size_t end);
 
