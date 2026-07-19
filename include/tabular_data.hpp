@@ -15,6 +15,7 @@ class TabularData{
 
 
     struct Column {
+        char name[32];
         size_t padding_bytes;
         DataType type;
         size_t n_elements;
@@ -31,8 +32,6 @@ class TabularData{
     std::vector<Column> columns_;
 
 
-    std::vector<std::string> columns_name_; // to avoid a non-static size of the struct Column separate the strings (the names of each column)
-
 
 public:
 
@@ -43,38 +42,38 @@ public:
     explicit TabularData(TabularData&& other)noexcept:
     data_(std::move (other.data_)),
     string_data_(std::move(other.string_data_)),
-    columns_(std::move(other.columns_)),
-    columns_name_(std::move(other.columns_name_))
+    columns_(std::move(other.columns_))
     {}
 
     TabularData& operator=(TabularData&& other)noexcept {
-        if (this != &other) {
+        if (this != &other){
             data_ = std::move(other.data_);
             string_data_ = std::move(other.string_data_);
             columns_ = std::move(other.columns_);
-            columns_name_ = std::move(other.columns_name_);
         }
         return *this;
     }
 
 
 
-    [[nodiscard]] auto n_columns() const {
+    [[nodiscard]] size_t n_columns() const {
         return columns_.size();
     }
 
 
-    [[nodiscard]] std::string_view column_name(const size_t size_index) {
-        BoundCheck::check_index(size_index, columns_name_.size(), columns_name_.size());
-        return columns_name_[size_index];
+    [[nodiscard]] std::string_view column_name(const size_t index) const {
+        bound_check::check_index_individual(index, columns_.size());
+        return {columns_[index].name};
     }
 
-    [[nodiscard]] auto column_datatype(const size_t size_index) const {
-        return columns_[size_index].type;
+    [[nodiscard]] DataType column_datatype(const size_t index) const {
+        bound_check::check_index_individual(index, columns_.size());
+        return columns_[index].type;
     }
 
-    [[nodiscard]] auto column_size(const size_t size_index) const {
-        return columns_[size_index].n_elements;
+    [[nodiscard]] size_t column_size(const size_t index) const {
+        bound_check::check_index_individual(index, columns_.size());
+        return columns_[index].n_elements;
     }
 
     /**

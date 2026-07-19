@@ -7,7 +7,7 @@
 
 
 
-namespace BoundCheck{
+namespace bound_check{
 
      inline void check_index_interval(const size_t begin, const size_t end, const size_t container_size) {
 
