@@ -42,6 +42,7 @@ class Buffer {
 
     explicit Buffer(const size_t size) {
        begin_ = sys_alloc::allocate(size);
+        size_ = size;
     }
 
     ~Buffer(){
